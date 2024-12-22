@@ -1,0 +1,10 @@
+#!/usr/bin/env python
+
+Import('env')
+Import("env_modules")
+
+module_env = env.Clone()
+module_env.Append(CPPPATH=["projectR/include"]) # this is a relative path
+module_env.add_source_files(env.modules_sources, "*.cpp")
+
+Export("module_env")
