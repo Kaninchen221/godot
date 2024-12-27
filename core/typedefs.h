@@ -33,6 +33,8 @@
 
 #include <stddef.h>
 
+#define PROJECTR_LOGIC
+
 /**
  * Basic definitions and simple functions to be used everywhere.
  */

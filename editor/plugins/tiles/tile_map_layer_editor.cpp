@@ -48,6 +48,10 @@
 #include "core/math/geometry_2d.h"
 #include "core/os/keyboard.h"
 
+#ifdef PROJECTR_LOGIC
+#include "../../../modules/projectr/pr_globals.hpp"
+#endif
+
 TileMapLayer *TileMapLayerSubEditorPlugin::_get_edited_layer() const {
 	return Object::cast_to<TileMapLayer>(ObjectDB::get_instance(edited_tile_map_layer_id));
 }
@@ -3076,9 +3080,30 @@ bool TileMapLayerEditorTerrainsPlugin::forward_canvas_gui_input(const Ref<InputE
 					drag_erasing = true;
 				}
 
+				#ifdef PROJECTR_LOGIC
+				if (tool_buttons_group->get_pressed_button() == paint_tool_button_extended_paint) {
+					if (selected_terrain_set < 0 || selected_terrain < 0 || (selected_type == SELECTED_TYPE_PATTERN && !selected_terrains_pattern.is_valid())) {
+						return true;
+					}
+
+					Vector2i central_tile = tile_set->local_to_map(mpos);
+					auto neighbour_tiles = PR_Globals::get_neighbour_tiles(central_tile);
+					neighbour_tiles.append(central_tile);
+					if (!drag_erasing) {
+						edited_layer->set_cells_terrain_connect(neighbour_tiles, selected_terrain_set, selected_terrain, true);
+					} else {
+						for (const auto& tile : neighbour_tiles) {
+							edited_layer->set_cell(tile, TileSet::INVALID_SOURCE, TileSetSource::INVALID_ATLAS_COORDS, 0);
+						}
+					}
+					return true;
+				}
+				#endif
+
 				if (picker_button->is_pressed()) {
 					drag_type = DRAG_TYPE_PICK;
 				} else {
+
 					// Paint otherwise.
 					if (tool_buttons_group->get_pressed_button() == paint_tool_button && !Input::get_singleton()->is_key_pressed(Key::CMD_OR_CTRL) && !Input::get_singleton()->is_key_pressed(Key::SHIFT)) {
 						if (selected_terrain_set < 0 || selected_terrain < 0 || (selected_type == SELECTED_TYPE_PATTERN && !selected_terrains_pattern.is_valid())) {
@@ -3493,6 +3518,10 @@ void TileMapLayerEditorTerrainsPlugin::_update_theme() {
 	rect_tool_button->set_icon(main_vbox_container->get_editor_theme_icon(SNAME("Rectangle")));
 	bucket_tool_button->set_icon(main_vbox_container->get_editor_theme_icon(SNAME("Bucket")));
 
+#ifdef PROJECTR_LOGIC
+	paint_tool_button_extended_paint->set_icon(main_vbox_container->get_editor_theme_icon(SNAME("EditProjectR")));
+#endif
+
 	picker_button->set_icon(main_vbox_container->get_editor_theme_icon(SNAME("ColorPick")));
 	erase_button->set_icon(main_vbox_container->get_editor_theme_icon(SNAME("Eraser")));
 
@@ -3549,6 +3578,20 @@ TileMapLayerEditorTerrainsPlugin::TileMapLayerEditorTerrainsPlugin() {
 	HBoxContainer *tilemap_tiles_tools_buttons = memnew(HBoxContainer);
 
 	tool_buttons_group.instantiate();
+
+#ifdef PROJECTR_LOGIC
+	paint_tool_button_extended_paint = memnew(Button);
+	paint_tool_button_extended_paint->set_theme_type_variation("FlatButton");
+	paint_tool_button_extended_paint->set_toggle_mode(true);
+	paint_tool_button_extended_paint->set_button_group(tool_buttons_group);
+	paint_tool_button_extended_paint->set_shortcut(ED_GET_SHORTCUT("tiles_editor/paint_tool"));
+	paint_tool_button_extended_paint->connect(SceneStringName(pressed), callable_mp(this, &TileMapLayerEditorTerrainsPlugin::_update_toolbar));
+	tilemap_tiles_tools_buttons->add_child(paint_tool_button_extended_paint);
+	viewport_shortcut_buttons.push_back(paint_tool_button_extended_paint);
+
+	tools_settings_vsep_extended = memnew(VSeparator);
+	tilemap_tiles_tools_buttons->add_child(tools_settings_vsep_extended);
+#endif
 
 	paint_tool_button = memnew(Button);
 	paint_tool_button->set_theme_type_variation("FlatButton");

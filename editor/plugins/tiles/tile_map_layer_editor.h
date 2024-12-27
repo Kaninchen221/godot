@@ -257,6 +257,11 @@ private:
 	Button *rect_tool_button = nullptr;
 	Button *bucket_tool_button = nullptr;
 
+#ifdef PROJECTR_LOGIC
+	VSeparator *tools_settings_vsep_extended = nullptr;
+	Button *paint_tool_button_extended_paint = nullptr;
+#endif
+
 	HBoxContainer *tools_settings = nullptr;
 
 	VSeparator *tools_settings_vsep = nullptr;
